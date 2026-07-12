@@ -1742,6 +1742,9 @@ func (c *Client) roundTrip(r *Request) (resp *Response, err error) {
 
 	// setup header
 	contentLength := int64(len(r.Body))
+	if r.contentLength != 0 {
+		contentLength = r.contentLength
+	}
 
 	var reqBody io.ReadCloser
 	if r.GetBody != nil {
@@ -1749,6 +1752,10 @@ func (c *Client) roundTrip(r *Request) (resp *Response, err error) {
 		if resp.Err != nil {
 			return
 		}
+	}
+	getBody := r.GetBody
+	if r.unReplayableBody != nil {
+		getBody = nil
 	}
 	req := &http.Request{
 		Method:        r.Method,
@@ -1760,7 +1767,7 @@ func (c *Client) roundTrip(r *Request) (resp *Response, err error) {
 		ProtoMinor:    1,
 		ContentLength: contentLength,
 		Body:          reqBody,
-		GetBody:       r.GetBody,
+		GetBody:       getBody,
 		Close:         r.close,
 	}
 	for _, cookie := range r.Cookies {
